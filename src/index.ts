@@ -1,18 +1,17 @@
-import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
-import { errorHandler } from "./middleware/errorHandler";
-import { rateLimiter } from "./middleware/rateLimiter";
+import express, { Express } from "express";
+import { errorHandler } from "./middlewares/errorHandler";
+import { rateLimiter } from "./middlewares/rateLimiter";
+import routes from "./routes";
 
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
 
-app.use(rateLimiter)
+app.use(rateLimiter);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Express + TypeScript Server");
-});
+app.use("/api", routes);
 
 app.use(errorHandler);
 

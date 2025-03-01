@@ -27,7 +27,8 @@ export const getApiKey = async (req: Request, res: Response) => {
   try {
     const cachedApiKey = await cache.get(`api_key:${id}`);
     if (cachedApiKey) {
-      return res.status(200).json({ apikey: cachedApiKey });
+      res.status(200).json({ apikey: cachedApiKey });
+      return 
     }
 
     const data = await pool.query("SELECT api_key FROM apps WHERE id = $1", [
