@@ -5,11 +5,12 @@ export const validateApiKey = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   const apiKey = req.header("x-api-key");
 
   if (!apiKey) {
-    return res.status(401).json({ message: "API key is missing" });
+    res.status(401).json({ message: "API key is missing" });
+    return;
   }
 
   try {
@@ -18,7 +19,8 @@ export const validateApiKey = async (
     ]);
 
     if (!data.rows.length) {
-      return res.status(403).json({ message: "Invalid API Key" });
+      res.status(403).json({ message: "Invalid API Key" });
+      return 
     }
 
     res.locals.appData = data.rows[0]

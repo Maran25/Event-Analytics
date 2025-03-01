@@ -26,9 +26,10 @@ export const collectEvent = async (
   } = res.locals.reqdata;
 
   if (!event || !url || !timestamp) {
-    return res
+    res
       .status(400)
       .json({ message: "Missing required fields: event, url, timestamp" });
+    return;
   }
 
   try {
@@ -60,12 +61,15 @@ export const eventSummary = async (
   res: Response
 ) => {
   const { event, startDate, endDate, app_id } = res.locals.reqdata;
-  const cacheKey = `eventSummary:${event}:${startDate || ''}:${endDate || ''}:${app_id || ''}`;
+  const cacheKey = `eventSummary:${event}:${startDate || ""}:${endDate || ""}:${
+    app_id || ""
+  }`;
 
   try {
     const cachedSummary = await cache.get(cacheKey);
     if (cachedSummary) {
-      return res.json(JSON.parse(cachedSummary));
+      res.status(200).json(JSON.parse(cachedSummary));
+      return;
     }
 
     let query = `
@@ -94,9 +98,9 @@ export const eventSummary = async (
     const result = await pool.query(query, params);
     const summary = result.rows[0] || {};
 
-    await cache.set(cacheKey, JSON.stringify(summary), 'EX', 3600);
+    await cache.set(cacheKey, JSON.stringify(summary), "EX", 3600);
 
-    res.status(200).json(summary)
+    res.status(200).json(summary);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch event summary" });
   }
@@ -109,7 +113,8 @@ export const userStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const cachedStats = await cache.get(cacheKey);
     if (cachedStats) {
-      return res.status(200).json(JSON.parse(cachedStats));
+      res.status(200).json(JSON.parse(cachedStats));
+      return;
     }
     const data = await pool.query(
       `SELECT userId, COUNT(*) AS totalEvents,
@@ -122,11 +127,12 @@ export const userStats = async (req: AuthenticatedRequest, res: Response) => {
     );
 
     if (!data.rows.length) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     const userStats = data.rows[0];
-    await cache.set(cacheKey, JSON.stringify(userStats), 'EX', 3600); 
+    await cache.set(cacheKey, JSON.stringify(userStats), "EX", 3600);
 
     res.status(200).json(userStats);
   } catch (error) {
