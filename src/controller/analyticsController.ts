@@ -1,6 +1,10 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../types/customRequest";
 import pool from "../config/db";
+import { Queue } from "bullmq";
+import redis from "../config/redis";
+
+const eventQueue = new Queue("events", { connection: redis });
 
 export const collectEvent = async (
   req: AuthenticatedRequest,
@@ -26,11 +30,9 @@ export const collectEvent = async (
   }
 
   try {
-    await pool.query(
-      `INSERT INTO 
-      events (app_id, owner_user_id, end_user_id, event, url, referrer, device, ip_address, timestamp, metadata 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [
+    await eventQueue.add(
+      "collect-event",
+      {
         app_id,
         owner_user_id,
         enduserid,
@@ -41,7 +43,8 @@ export const collectEvent = async (
         ipAddress,
         timestamp,
         metadata,
-      ]
+      },
+      { attempts: 3, backoff: { type: "exponential", delay: 5000 } }
     );
 
     res.status(200).json({ message: "Event collected successfully" });
