@@ -3,14 +3,14 @@ import crypto from "crypto";
 import pool from "../config/db";
 
 export const registerApp = async (req: Request, res: Response) => {
-  const { name, id } = req.body;
+  const { name, id, userid } = res.locals.reqdata;
 
   const apikey = crypto.randomBytes(32).toString("hex");
 
   try {
     await pool.query(
-      "INSERT INTO apps (app_name, app_id, api_key) VALUES ($1, $2, $3)",
-      [name, id, apikey]
+      "INSERT INTO apps (name, id, api_key, userid) VALUES ($1, $2, $3, $4)",
+      [name, id, apikey, userid]
     );
     res.status(200).json({ apikey });
   } catch (error) {
@@ -20,10 +20,10 @@ export const registerApp = async (req: Request, res: Response) => {
 
 
 export const getApiKey = async (req: Request, res: Response) => {
-    const { id } = req.body;
+    const { id } = res.locals.reqdata;
 
     try {
-        const data = await pool.query('SELECT api_key FROM apps WHERE app_id = $1', [id])
+        const data = await pool.query('SELECT api_key FROM apps WHERE id = $1', [id])
 
         if(!data) {
             res.status(404).json({ message: 'App not found' })
@@ -36,7 +36,7 @@ export const getApiKey = async (req: Request, res: Response) => {
 }
 
 export const revokeApiKey = async (req: Request, res: Response) => {
-    const { apikey } = req.body;
+    const { apikey } = res.locals.reqdata;
 
     try {
         await pool.query('DELETE FROM apps WHERE api_key = $1', [apikey])
