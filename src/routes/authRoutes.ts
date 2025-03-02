@@ -4,11 +4,13 @@ import {
   getApiKey,
   revokeApiKey
 } from "../controllers/authController";
+import { getApiKeySchema, registerAppSchema, revokeApiKeySchema} from '../validators/authValdiator'
+import validate from "../middlewares/validate";
 
 const router = Router();
 
-router.post("/register", registerApp);
-router.get("/api-key", getApiKey);
-router.post("/revoke", revokeApiKey);
+router.post("/register", validate(registerAppSchema), registerApp);
+router.get("/api-key", validate(getApiKeySchema), getApiKey);
+router.post("/revoke", validate(revokeApiKeySchema), revokeApiKey);
 
 export default router;

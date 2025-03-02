@@ -22,15 +22,8 @@ export const collectEvent = async (
     ipAddress,
     timestamp,
     metadata,
-    enduserid,
+    userId,
   } = res.locals.reqdata;
-
-  if (!event || !url || !timestamp) {
-    res
-      .status(400)
-      .json({ message: "Missing required fields: event, url, timestamp" });
-    return;
-  }
 
   try {
     await eventQueue.add(
@@ -38,7 +31,7 @@ export const collectEvent = async (
       {
         app_id,
         owner_user_id,
-        enduserid,
+        userId,
         event,
         url,
         referrer,
