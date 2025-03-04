@@ -12,16 +12,16 @@ export const collectEventSchema = Joi.object({
     os: Joi.string().required(),
     screenSize: Joi.string().required(),
   }).required(),
-  userId: Joi.string().min(3).required(),
+  actor_id: Joi.string().min(3).required(),
 });
 
 export const eventSummarySchema = Joi.object({
   event: Joi.string().min(1).required(),
   startDate: Joi.date().iso().optional(),
   endDate: Joi.date().iso().optional(),
-  app_id: Joi.string().uuid().optional(),
+  app_id: Joi.string().min(3).max(45).optional(),
 });
 
 export const userStatsSchema = Joi.object({
-  userid: Joi.string().uuid().required(),
+  userid: Joi.string().min(3).required(),
 });

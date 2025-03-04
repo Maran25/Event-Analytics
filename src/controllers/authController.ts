@@ -1,14 +1,15 @@
 import { Request, Response } from "express";
 import { Redis } from "ioredis";
-import uuid from 'uuid';
+import crypto from 'crypto';
 import pool from "../config/db";
 
 const cache = new Redis();
 
 export const registerApp = async (_: Request, res: Response) => {
-  const { name, id, userid } = res.locals.reqdata;
+  const { name, id } = res.locals.reqdata;
+  const { user_id } = res.locals.userData
 
-  const apikey = uuid.v4()
+  const apikey = crypto.randomBytes(32).toString("hex");
 
   try {
     const doesExists = await pool.query("SELECT * FROM apps WHERE id = $1", [
@@ -20,17 +21,19 @@ export const registerApp = async (_: Request, res: Response) => {
     }
 
     await pool.query(
-      "INSERT INTO apps (name, id, api_key, userid) VALUES ($1, $2, $3, $4)",
-      [name, id, apikey, userid]
+      "INSERT INTO apps (name, id, api_key, user_id) VALUES ($1, $2, $3, $4)",
+      [name, id, apikey, user_id]
     );
     res.status(200).json({ apikey });
-  } catch (error) {
+  } catch (error: any) {
+    console.log('waht is the register err', error.message)
     res.status(500).json({ message: "Error registering app" });
   }
 };
 
 export const getApiKey = async (_: Request, res: Response) => {
   const { id } = res.locals.reqdata;
+  const { user_id } = res.locals.userData
 
   try {
     const cachedApiKey = await cache.get(`api_key:${id}`);
@@ -40,8 +43,10 @@ export const getApiKey = async (_: Request, res: Response) => {
       return;
     }
 
-    const data = await pool.query("SELECT api_key FROM apps WHERE id = $1", [
+    console.log('raahhhh', (await pool.query('SELECT * FROM apps')).rows[0], { id, user_id })
+    const data = await pool.query("SELECT api_key FROM apps WHERE id = $1 AND user_id = $2", [
       id,
+      user_id
     ]);
 
     if (!data.rowCount) {
@@ -60,10 +65,12 @@ export const getApiKey = async (_: Request, res: Response) => {
 
 export const revokeApiKey = async (_: Request, res: Response) => {
   const { apikey } = res.locals.reqdata;
+  const { user_id } = res.locals.userData;
 
   try {
-    await pool.query("DELETE FROM apps WHERE api_key = $1", [
+    await pool.query("DELETE FROM apps WHERE api_key = $1 AND user_id = $2", [
       apikey,
+      user_id
     ]);
     await cache.del(`api_key:${apikey}`);
 

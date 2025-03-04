@@ -15,18 +15,18 @@ const worker = new Worker(
       ipAddress,
       timestamp,
       metadata,
-      enduserid,
+      actor_id,
     } = job.data;
 
     try {
       await pool.query(
         `INSERT INTO 
-        events (app_id, owner_user_id, end_user_id, event, url, referrer, device, ip_address, timestamp, metadata 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        events (app_id, user_id, actor_id, event, url, referrer, device, ip_address, timestamp, metadata 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);`,
         [
           app_id,
           owner_user_id,
-          enduserid,
+          actor_id,
           event,
           url,
           referrer,

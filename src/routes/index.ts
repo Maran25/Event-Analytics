@@ -1,13 +1,16 @@
 import { Router } from "express";
+import { getRequestData } from "../middlewares/getRequestData";
+import { verifyToken } from "../middlewares/verifyToken";
 import analyticsRoutes from "./analyticsRoutes";
 import authRoutes from "./authRoutes";
-import { getRequestData } from "../middlewares/getRequestData";
-import { validateApiKey } from "../middlewares/validateApiKey";
+import googleAuthRoutes from "./googleAuthRoutes";
 
 const router = Router();
 
-router.use("/analytics", getRequestData, validateApiKey, analyticsRoutes);
+router.use("/auth/google", googleAuthRoutes);
 
-router.use("/auth", getRequestData, authRoutes);
+router.use("/analytics", getRequestData, verifyToken, analyticsRoutes);
+
+router.use("/auth", getRequestData, verifyToken, authRoutes);
 
 export default router;

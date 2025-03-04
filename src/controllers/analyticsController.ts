@@ -1,9 +1,9 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../types/customRequest";
-import pool from "../config/db";
 import { Queue } from "bullmq";
-import redis from "../config/redis";
+import { Response } from "express";
 import { Redis } from "ioredis";
+import pool from "../config/db";
+import redis from "../config/redis";
+import { AuthenticatedRequest } from "../types/customRequest";
 
 const eventQueue = new Queue("events", { connection: redis });
 const cache = new Redis();
@@ -13,7 +13,7 @@ export const collectEvent = async (
   res: Response
 ) => {
   const app_id = req.appData?.id;
-  const owner_user_id = req.appData?.userid;
+  const user_id = req.appData?.userid;
   const {
     event,
     url,
@@ -22,7 +22,7 @@ export const collectEvent = async (
     ipAddress,
     timestamp,
     metadata,
-    userId,
+    actor_id,
   } = res.locals.reqdata;
 
   try {
@@ -30,8 +30,8 @@ export const collectEvent = async (
       "collect-event",
       {
         app_id,
-        owner_user_id,
-        userId,
+        user_id,
+        actor_id,
         event,
         url,
         referrer,
@@ -54,6 +54,7 @@ export const eventSummary = async (
   res: Response
 ) => {
   const { event, startDate, endDate, app_id } = res.locals.reqdata;
+  const { user_id } = res.locals.userData;
   const cacheKey = `eventSummary:${event}:${startDate || ""}:${endDate || ""}:${
     app_id || ""
   }`;
@@ -66,12 +67,21 @@ export const eventSummary = async (
     }
 
     let query = `
-        SELECT event, COUNT(*) AS count, COUNT(DISTINCT user_id) AS uniqueUsers,
-          json_object_agg(device, count) AS deviceData
-        FROM events
-        WHERE event = $1
-      `;
-    const params = [event];
+  SELECT 
+    event, 
+    COUNT(*)::int AS count, 
+    COUNT(DISTINCT actor_id) AS "uniqueUsers",
+    json_object_agg(device, device_count) AS "deviceData"
+  FROM (
+    SELECT 
+      event,
+      actor_id,
+      device,
+      COUNT(*)::int AS device_count
+    FROM events
+    WHERE event = $1 AND user_id = $2
+  `;
+    const params = [event, user_id];
 
     if (startDate) {
       query += ` AND timestamp >= $${params.length + 1}`;
@@ -86,10 +96,19 @@ export const eventSummary = async (
       params.push(app_id);
     }
 
-    query += " GROUP BY event";
+    query += `
+      GROUP BY event, actor_id, device
+    ) AS subquery
+    GROUP BY event;
+`;
 
     const result = await pool.query(query, params);
-    const summary = result.rows[0] || {};
+    const summary = result.rows[0] || {
+      event,
+      count: 0,
+      uniqueUsers: 0,
+      deviceData: {},
+    };
 
     await cache.set(cacheKey, JSON.stringify(summary), "EX", 3600);
 
@@ -101,7 +120,8 @@ export const eventSummary = async (
 
 export const userStats = async (req: AuthenticatedRequest, res: Response) => {
   const { userid } = res.locals.reqdata;
-  const cacheKey = `userStats:${userid}`;
+  const { user_id } = res.locals.userData;
+  const cacheKey = `userStats:${userid}:${user_id}`;
 
   try {
     const cachedStats = await cache.get(cacheKey);
@@ -109,15 +129,43 @@ export const userStats = async (req: AuthenticatedRequest, res: Response) => {
       res.status(200).json(JSON.parse(cachedStats));
       return;
     }
+
     const data = await pool.query(
-      `SELECT userId, COUNT(*) AS totalEvents,
-              json_build_object('browser', metadata->>'browser', 'os', metadata->>'os') AS deviceDetails,
-              (SELECT ip_address FROM events WHERE user_id = $1 ORDER BY DESC LIMIT 1) AS ipAddress
-       FROM events
-       WHERE userId = $1
-       GROUP BY userId, metadata`,
-      [userid]
+      `
+      WITH latest_event AS (
+        SELECT 
+          actor_id,
+          ip_address,
+          metadata,
+          timestamp
+        FROM events
+        WHERE actor_id = $1 AND user_id = $2
+        ORDER BY timestamp DESC
+        LIMIT 1
+      )
+      
+      SELECT 
+        e.actor_id AS "userId",
+        COUNT(*)::int AS "totalEvents",
+        json_build_object(
+          'browser', le.metadata->>'browser',
+          'os', le.metadata->>'os'
+        ) AS "deviceDetails",
+        le.ip_address AS "ipAddress"
+      
+      FROM events e
+      JOIN latest_event le ON e.actor_id = le.actor_id
+      
+      WHERE e.actor_id = $1 AND e.user_id = $2
+      
+      GROUP BY 
+        e.actor_id,
+        le.metadata,
+        le.ip_address;
+      `,
+      [userid, user_id]
     );
+    
 
     if (!data.rows.length) {
       res.status(404).json({ message: "User not found" });
@@ -128,7 +176,8 @@ export const userStats = async (req: AuthenticatedRequest, res: Response) => {
     await cache.set(cacheKey, JSON.stringify(userStats), "EX", 3600);
 
     res.status(200).json(userStats);
-  } catch (error) {
+  } catch (error: any) {
+    console.log("what is userstats error***", error.message);
     res.status(500).json({ error: "Failed to fetch user stats" });
   }
 };

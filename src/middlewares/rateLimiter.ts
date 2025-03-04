@@ -3,7 +3,7 @@ import { Request } from "express";
 
 export const rateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 500, 
+  max: Number(process.env.MAX_LIMIT) || 500, 
   keyGenerator: (req: Request) => {
     return (req.headers['x-api-key'] as string) || req.ip || 'unknown';
   },

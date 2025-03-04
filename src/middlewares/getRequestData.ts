@@ -1,4 +1,4 @@
-import { Request, NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 export const getRequestData = (
   req: Request,
@@ -12,6 +12,7 @@ export const getRequestData = (
   } else {
     res.locals.reqdata = req.query;
   }
+  console.log('reqmetod***', method, res.locals.reqdata)
 
   next();
 };
