@@ -1,65 +1,41 @@
 import { Request, Response } from "express";
-import { Redis } from "ioredis";
-import crypto from 'crypto';
-import pool from "../config/db";
+import { AuthService } from "../services/AuthServices";
 
-const cache = new Redis();
+const authService = new AuthService();
 
 export const registerApp = async (_: Request, res: Response) => {
   const { name, id } = res.locals.reqdata;
-  const { user_id } = res.locals.userData
-
-  const apikey = crypto.randomBytes(32).toString("hex");
+  const { user_id } = res.locals.userData;
 
   try {
-    const doesExists = await pool.query("SELECT * FROM apps WHERE id = $1", [
-      id,
-    ]);
-    if (doesExists.rows.length > 0) {
+    if (await authService.appExists(id)) {
       res.status(400).json({ message: "App already exists" });
-      return;
+      return 
     }
-
-    await pool.query(
-      "INSERT INTO apps (name, id, api_key, user_id) VALUES ($1, $2, $3, $4)",
-      [name, id, apikey, user_id]
-    );
+    
+    const apikey = await authService.registerApp(name, id, user_id);
     res.status(200).json({ apikey });
   } catch (error: any) {
-    console.log('waht is the register err', error.message)
+    console.error("Register error:", error.message);
     res.status(500).json({ message: "Error registering app" });
   }
 };
 
 export const getApiKey = async (_: Request, res: Response) => {
   const { id } = res.locals.reqdata;
-  const { user_id } = res.locals.userData
+  const { user_id } = res.locals.userData;
 
   try {
-    const cachedApiKey = await cache.get(`api_key:${id}`);
-
-    if (cachedApiKey) {
-      res.status(200).json({ apikey: cachedApiKey });
-      return;
-    }
-
-    console.log('raahhhh', (await pool.query('SELECT * FROM apps')).rows[0], { id, user_id })
-    const data = await pool.query("SELECT api_key FROM apps WHERE id = $1 AND user_id = $2", [
-      id,
-      user_id
-    ]);
-
-    if (!data.rowCount) {
+    const apikey = await authService.getApiKey(id, user_id);
+    if (!apikey) {
       res.status(404).json({ message: "App not found" });
-      return;
+      return 
     }
-
-    const apikey = data.rows[0].api_key;
-    await cache.set(`api_key:${id}`, apikey, "EX", 3600); // Cache for 1 hour
 
     res.status(200).json({ apikey });
   } catch (error: any) {
-    res.status(500).json({ message: "Error getting api key" });
+    console.error("Get API key error:", error.message);
+    res.status(500).json({ message: "Error getting API key" });
   }
 };
 
@@ -68,14 +44,10 @@ export const revokeApiKey = async (_: Request, res: Response) => {
   const { user_id } = res.locals.userData;
 
   try {
-    await pool.query("DELETE FROM apps WHERE api_key = $1 AND user_id = $2", [
-      apikey,
-      user_id
-    ]);
-    await cache.del(`api_key:${apikey}`);
-
+    await authService.revokeApiKey(apikey, user_id);
     res.status(200).json({ message: "API Key revoked" });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Revoke API key error:", error.message);
     res.status(500).json({ message: "Error revoking API Key" });
   }
 };

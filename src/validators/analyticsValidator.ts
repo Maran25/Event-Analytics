@@ -12,7 +12,7 @@ export const collectEventSchema = Joi.object({
     os: Joi.string().required(),
     screenSize: Joi.string().required(),
   }).required(),
-  actor_id: Joi.string().min(3).required(),
+  userId: Joi.string().min(3).required(),
 });
 
 export const eventSummarySchema = Joi.object({
