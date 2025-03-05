@@ -2,7 +2,7 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   google_id VARCHAR(255) UNIQUE NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255),
   name VARCHAR(255),
   created_at TIMESTAMP DEFAULT NOW()
 );

@@ -19,7 +19,7 @@ export class AnalyticsService {
     });
   }
 
-  async getEventSummary(event: string, startDate?: string, endDate?: string, app_id?: string, user_id?: string): Promise<any> {
+  async getEventSummary(event: string, user_id: string, startDate?: string, endDate?: string, app_id?: string): Promise<any> {
     const cacheKey = `eventSummary:${event}:${startDate || ""}:${endDate || ""}:${app_id || ""}`;
     const cachedSummary = await this.cache.get(cacheKey);
     if (cachedSummary) return JSON.parse(cachedSummary);

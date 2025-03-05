@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
@@ -10,10 +10,12 @@ const dbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT) || 5432,
-  database: "postgres", // Use the default database initially
+  database: "postgres", // Using the default database
 };
 
+// const randomSuffix = Math.floor(Math.random() * 10000);
 const dbName = process.env.DB_NAME;
+
 export const testPool = new Pool({ ...dbConfig, database: dbName });
 
 const setupTestDB = async () => {
@@ -54,13 +56,29 @@ const setupTestDB = async () => {
   }
 };
 
-// export const resetTestDB = async () => {
-//   const sql = fs.readFileSync(path.join(__dirname, "sql/setup.sql"), "utf-8");
-//   await testPool.query(sql);
-// };
+export const createTestDB = () => {
+  return new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: Number(process.env.DB_PORT),
+  });
+};
 
-// beforeAll(async () => {
-//   await resetTestDB();
-// });
+export const startTransaction = async (pool: Pool) => {
+  const client = await pool.connect();
+  await client.query("BEGIN");
+  return client;
+};
+
+export const rollbackTransaction = async (client: PoolClient) => {
+  await client.query("ROLLBACK");
+  client.release();
+};
+
+export const closeTestDB = async (pool: Pool) => {
+  await pool.end();
+};
 
 export default setupTestDB;

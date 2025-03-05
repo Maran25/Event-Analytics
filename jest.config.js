@@ -6,6 +6,7 @@ module.exports = {
   transform: {
     "^.+\\.tsx?$": "ts-jest",
   },
+  verbose: true,
   moduleFileExtensions: ["ts", "tsx", "js"],
   testMatch: ["**/*.test.ts"],
   globalSetup: "<rootDir>/jest.setup.ts",

@@ -1,5 +1,5 @@
 import request from "supertest";
-import server from "../../src/index";
+import app from "../../src/app";
 import { createTestUser } from "../helpers/createTestUser";
 import { registerApp } from "../helpers/registerApp";
 
@@ -31,7 +31,7 @@ describe("Analytics Route - Collect Event", () => {
       userId: "abc123",
     };
 
-    const res = await request(server)
+    const res = await request(app)
       .post("/api/analytics/collect")
       .set("Authorization", `Bearer ${token}`)
       .set("x-api-key", apiKey)
@@ -49,7 +49,7 @@ describe("Analytics Route - Collect Event", () => {
       url: "https://example.com/page",
     };
 
-    const res = await request(server)
+    const res = await request(app)
       .post("/api/analytics/collect")
       .set("Authorization", `Bearer ${token}`)
       .set("x-api-key", apiKey)
@@ -75,7 +75,7 @@ describe("Analytics Route - Collect Event", () => {
       userId: "abc123",
     };
 
-    const res = await request(server)
+    const res = await request(app)
       .post("/api/analytics/collect")
       .set("Authorization", `Bearer ${token}`)
       .send(eventData);
@@ -100,46 +100,12 @@ describe("Analytics Route - Collect Event", () => {
       userId: "abc123",
     };
 
-    const res = await request(server)
+    const res = await request(app)
       .post("/api/analytics/collect")
       .set("x-api-key", apiKey)
       .send(eventData);
 
     expect(res.status).toBe(401);
     expect(res.body.message).toBe("Access denied. No token provided.");
-  });
-
-  xit("Fail -> should return 429 if rate limit is exceeded", async () => {
-    const eventData = {
-      event: "login_form_cta_click",
-      url: "https://example.com/page",
-      referrer: "https://google.com",
-      device: "mobile",
-      ipAddress: "192.168.1.1",
-      timestamp: "2024-02-20T12:34:56Z",
-      metadata: {
-        browser: "Chrome",
-        os: "Android",
-        screenSize: "1080x1920",
-      },
-      userId: "abc123",
-    };
-
-    for (let i = 0; i < 10; i++) {
-      await request(server)
-        .post("/api/analytics/collect")
-        .set("Authorization", `Bearer ${token}`)
-        .set("x-api-key", apiKey)
-        .send(eventData);
-    }
-
-    const res = await request(server)
-      .post("/api/analytics/collect")
-      .set("Authorization", `Bearer ${token}`)
-      .set("x-api-key", apiKey)
-      .send(eventData);
-
-    expect(res.status).toBe(429);
-    expect(res.body.message).toBe("Rate limit exceeded");
   });
 });

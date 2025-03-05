@@ -45,10 +45,10 @@ export const eventSummary = async (req: Request, res: Response) => {
   try {
     const summary = await analyticsService.getEventSummary(
       event,
+      user_id,
       startDate,
       endDate,
       app_id,
-      user_id
     );
 
     res.status(200).json(summary);

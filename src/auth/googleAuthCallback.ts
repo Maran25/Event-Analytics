@@ -48,7 +48,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
     if (!user.rowCount) {
       user = await pool.query(
         "INSERT INTO users (google_id, email, name) VALUES ($1, $2, $3) RETURNING *",
-        [googleId, email, name]
+        [googleId, email || '', name || '']
       );
     }
 
