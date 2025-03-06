@@ -2,8 +2,6 @@ import crypto from 'crypto';
 import { Redis } from "ioredis";
 import pool from "../config/db";
 
-const cache = new Redis();
-
 export class AuthService {
   async appExists(id: string) {
     const result = await pool.query("SELECT * FROM apps WHERE id = $1", [id]);
@@ -20,9 +18,6 @@ export class AuthService {
   }
 
   async getApiKey(id: string, user_id: number) {
-    const cachedApiKey = await cache.get(`api_key:${id}`);
-    if (cachedApiKey) return cachedApiKey;
-
     const result = await pool.query(
       "SELECT api_key FROM apps WHERE id = $1 AND user_id = $2",
       [id, user_id]
@@ -31,7 +26,6 @@ export class AuthService {
     if (!result.rowCount) return null;
 
     const apikey = result.rows[0].api_key;
-    await cache.set(`api_key:${id}`, apikey, "EX", 3600);
     return apikey;
   }
 
@@ -40,6 +34,5 @@ export class AuthService {
       apikey,
       user_id
     ]);
-    await cache.del(`api_key:${apikey}`);
   }
 }

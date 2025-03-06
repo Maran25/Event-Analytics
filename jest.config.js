@@ -8,7 +8,7 @@ module.exports = {
   },
   verbose: true,
   moduleFileExtensions: ["ts", "tsx", "js"],
-  testMatch: ["**/*.test.ts"],
+  testMatch: ["<rootDir>/tests/*.test.ts"],
   globalSetup: "<rootDir>/jest.setup.ts",
   globalTeardown: "<rootDir>/jest.teardown.ts",
   setupFiles: ["dotenv/config"],

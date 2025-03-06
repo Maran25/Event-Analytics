@@ -21,6 +21,10 @@ describe("Analytics Routes", () => {
     await createEvents({ userid, appId, eventCount: 5 });
   });
 
+  // ============================
+  // Analytics Route - Collect Event
+  // ============================
+
   describe("Collect Event", () => {
     it("Pass -> should collect an event successfully", async () => {
       const eventData = {
@@ -45,7 +49,10 @@ describe("Analytics Routes", () => {
     });
 
     it("Fail -> should return 400 if required fields are missing", async () => {
-      const incompleteEventData = { event: "login_form_cta_click", url: "https://example.com/page" };
+      const incompleteEventData = {
+        event: "login_form_cta_click",
+        url: "https://example.com/page",
+      };
       const res = await request(app)
         .post("/api/analytics/collect")
         .set("Authorization", `Bearer ${token}`)
@@ -57,10 +64,16 @@ describe("Analytics Routes", () => {
     });
   });
 
+  // ============================
+  // Analytics Route - Event Summary
+  // ============================
+
   describe("Event Summary", () => {
     it("Pass -> should return event summary with filters", async () => {
       const res = await request(server)
-        .get(`/api/analytics/event-summary?app_id=${appId}&event=login_form_cta_click`)
+        .get(
+          `/api/analytics/event-summary?app_id=${appId}&event=login_form_cta_click`
+        )
         .set("Authorization", `Bearer ${token}`);
 
       expect(res.status).toBe(200);
@@ -79,9 +92,18 @@ describe("Analytics Routes", () => {
     });
   });
 
+  // ============================
+  // Analytics Route - User Stats
+  // ============================
+
   describe("User Stats", () => {
     it("Pass -> should return user stats", async () => {
-      await createEvents({ userid, appId, eventCount: 3, eventUser: [eventuser, eventuser, eventuser] });
+      await createEvents({
+        userid,
+        appId,
+        eventCount: 3,
+        eventUser: [eventuser, eventuser, eventuser],
+      });
       const res = await request(server)
         .get(`/api/analytics/user-stats?userid=${eventuser}`)
         .set("Authorization", `Bearer ${token}`);

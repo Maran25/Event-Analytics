@@ -10,9 +10,10 @@ export const createTestUser = async (): Promise<{
   token: string;
   userid: string;
 }> => {
-  const googleId = "test-google-id";
-  const email = "testuser@gmail.com";
-  const name = "Test User";
+  const randomSuffix = Math.floor(Math.random() * 1000);
+  const googleId = "test-google-id" + randomSuffix;
+  const email = "testuser@gmail.com" + randomSuffix;
+  const name = "Test User" + randomSuffix;
 
   // insert a test user into the database (or update if exists)
   const data = await pool.query(
@@ -22,7 +23,7 @@ export const createTestUser = async (): Promise<{
      RETURNING id`,
     [googleId, email, name]
   );
-  
+
   const userid = data.rows.length ? data.rows[0].id : null;
 
   const token = jwt.sign({ user_id: userid }, JWT_SECRET!, { expiresIn: "1h" });

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test dotenv -e .env.test npx jest --runInBand --detectOpenHandles",
+    "test:auth": "cross-env NODE_ENV=test dotenv -e .env.test npx jest tests/auth.test.ts --runInBand --detectOpenHandles",
+    "test:analytics": "cross-env NODE_ENV=test dotenv -e .env.test npx jest tests/analytics.test.ts --runInBand --detectOpenHandles",
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts"
@@ -19,6 +20,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
+    "google-auth-library": "^9.15.1",
     "ioredis": "^5.5.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",

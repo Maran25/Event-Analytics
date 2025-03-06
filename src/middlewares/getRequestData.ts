@@ -12,7 +12,6 @@ export const getRequestData = (
   } else {
     res.locals.reqdata = req.query;
   }
-  console.log('reqmetod***', method, res.locals.reqdata)
 
   next();
 };

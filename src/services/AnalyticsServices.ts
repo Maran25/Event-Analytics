@@ -9,7 +9,7 @@ export class AnalyticsService {
 
   constructor() {
     this.eventQueue = new Queue("events", { connection: redis });
-    this.cache = new Redis();
+    this.cache = new Redis(process.env.REDIS_URL || "redis://redis:6379");
   }
 
   async collectEvent(data: any): Promise<void> {

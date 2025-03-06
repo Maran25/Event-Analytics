@@ -19,7 +19,7 @@ CREATE TABLE apps (
 -- Events table to store collected events
 CREATE TABLE events (
   id SERIAL PRIMARY KEY,
-  app_id INTEGER REFERENCES apps(id) ON DELETE CASCADE,
+  app_id VARCHAR(64) REFERENCES apps(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   actor_id VARCHAR(64) NOT NULL,
   event VARCHAR(255) NOT NULL,

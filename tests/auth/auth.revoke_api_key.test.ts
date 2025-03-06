@@ -36,16 +36,6 @@ describe("Auth Route - Revoke Api Key", () => {
     expect(res.body.message).toEqual("API Key revoked");
   });
 
-  it("Pass -> stored in cache", async () => {
-    const res = await request(server)
-      .get(`/api/auth/api-key?id=${appId}`)
-      .set("Authorization", `Bearer ${token}`);
-    console.log("response for the first**", res.body);
-
-    expect(res.status).toBe(200);
-    expect(res.body.apikey).toBe(apiKey);
-  });
-
   it("Pass -> app does not exists in the db", async () => {
     const data = await testPool.query("SELECT * FROM apps WHERE api_key = $1", [
       apiKey,
